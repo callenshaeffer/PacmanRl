@@ -1001,10 +1001,7 @@ while running:
                     onLaunchScreen = False
                     game.paused = True
                     game.started = False
-                    game.render()
-                    pygame.mixer.music.load(MusicPath + "pacman_beginning.wav")
-                    pygame.mixer.music.play()
-                    musicPlaying = 1
+                    game.render()                    
             elif event.key == pygame.K_q:
                 running = False
                 game.recordHighScore()
