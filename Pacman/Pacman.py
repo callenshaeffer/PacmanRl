@@ -982,21 +982,7 @@ while running:
         elif event.type == pygame.KEYDOWN:
             game.paused = False
             game.started = True
-            if event.key in PLAYING_KEYS["up"]:
-                i = random.randint(0,3)
-                if i == 0:#up
-                    if not onLaunchScreen:
-                        game.pacman.newDir = 0
-                elif i == 1:#right
-                    if not onLaunchScreen:
-                        game.pacman.newDir = 1
-                elif i == 2:#down
-                    if not onLaunchScreen:
-                        game.pacman.newDir = 2
-                elif i == 3:#left
-                    if not onLaunchScreen:
-                        game.pacman.newDir = 3
-            elif event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE:
                 if onLaunchScreen:
                     onLaunchScreen = False
                     game.paused = True
@@ -1005,6 +991,20 @@ while running:
             elif event.key == pygame.K_q:
                 running = False
                 game.recordHighScore()
+    
+    i = random.randint(0,3)
+    if i == 0:#up
+        if not onLaunchScreen:
+            game.pacman.newDir = 0
+    elif i == 1:#right
+        if not onLaunchScreen:
+            game.pacman.newDir = 1
+    elif i == 2:#down
+        if not onLaunchScreen:
+            game.pacman.newDir = 2
+    elif i == 3:#left
+        if not onLaunchScreen:
+            game.pacman.newDir = 3
 
     if not onLaunchScreen:
         game.update()
