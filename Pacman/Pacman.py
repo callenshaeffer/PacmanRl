@@ -983,17 +983,19 @@ while running:
             game.paused = False
             game.started = True
             if event.key in PLAYING_KEYS["up"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 0
-            elif event.key in PLAYING_KEYS["right"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 1
-            elif event.key in PLAYING_KEYS["down"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 2
-            elif event.key in PLAYING_KEYS["left"]:
-                if not onLaunchScreen:
-                    game.pacman.newDir = 3
+                i = random.randint(0,3)
+                if i == 0:#up
+                    if not onLaunchScreen:
+                        game.pacman.newDir = 0
+                elif i == 1:#right
+                    if not onLaunchScreen:
+                        game.pacman.newDir = 1
+                elif i == 2:#down
+                    if not onLaunchScreen:
+                        game.pacman.newDir = 2
+                elif i == 3:#left
+                    if not onLaunchScreen:
+                        game.pacman.newDir = 3
             elif event.key == pygame.K_SPACE:
                 if onLaunchScreen:
                     onLaunchScreen = False
