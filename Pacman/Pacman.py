@@ -288,7 +288,7 @@ class Game:
         pygame.display.update()
 
     def playMusic(self, music):
-        # return False # Uncomment to disable music
+        return False # Uncomment to disable music
         global musicPlaying
         if not pygame.mixer.music.get_busy():
             pygame.mixer.music.unload()
@@ -303,7 +303,7 @@ class Game:
                 musicPlaying = 1
 
     def forcePlayMusic(self, music):
-        # return False # Uncomment to disable music
+        return False # Uncomment to disable music
         pygame.mixer.music.unload()
         pygame.mixer.music.load(MusicPath + music)
         pygame.mixer.music.play()
