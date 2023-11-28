@@ -4,6 +4,8 @@ from random import randrange
 import random
 import copy
 import os
+import numpy as np
+import pickle
 
 BoardPath = "Assets/BoardImages/"
 ElementPath = "Assets/ElementImages/"
@@ -973,38 +975,129 @@ def pause(time):
     while not cur == time:
         cur += 1
 
-while running:
-    clock.tick(40)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-            game.recordHighScore()
-        elif event.type == pygame.KEYDOWN:
-            game.paused = False
-            game.started = True
-            if event.key == pygame.K_SPACE:
-                if onLaunchScreen:
-                    onLaunchScreen = False
-                    game.paused = True
-                    game.started = False
-                    game.render()                    
-            elif event.key == pygame.K_q:
+# class QLearningAgent:
+#     def __init__(self, actions, learning_rate=0.1, discount_factor=0.9, exploration_prob=0.2):
+#         self.actions = actions
+#         self.learning_rate = learning_rate
+#         self.discount_factor = discount_factor
+#         self.exploration_prob = exploration_prob
+#         self.q_table = {}
+
+#     def get_state_key(self, game):
+
+#         return str(game.acman.row) + "_" + str(game.pacman.col) + "_" + str(game.level)
+
+#     def choose_action(self, game):
+#         state_key = self.get_state_key(game)
+
+#         if random.uniform(0, 1) < self.exploration_prob:
+#             action = random.choice(self.actions)
+#         else:
+#             if state_key in self.q_table:
+#                 action = max(self.q_table[state_key], key=self.q_table[state_key].get)
+#             else:
+#                 action = random.choice(self.actions)
+
+#         return action
+
+#     def learn(self, state, action, reward, next_state):
+#         state_key = state.get_state_key()
+#         next_state_key = next_state.get_state_key()
+
+#         if state_key not in self.q_table:
+#             self.q_table[state_key] = {a: 0 for a in self.actions}
+
+#         if next_state_key not in self.q_table:
+#             self.q_table[next_state_key] = {a: 0 for a in self.actions}
+
+#         max_next_q = max(self.q_table[next_state_key].values()) if self.q_table[next_state_key] else 0
+#         current_q = self.q_table[state_key][action]
+
+#         new_q = current_q + self.learning_rate * (reward + self.discount_factor * max_next_q - current_q)
+#         self.q_table[state_key][action] = new_q
+
+#     def save_q_table(self, filename):
+#         with open(filename, 'wb') as file:
+#             pickle.dump(self.q_table, file)
+
+#     def load_q_table(self, filename):
+#         with open(filename, 'rb') as file:
+#             self.q_table = pickle.load(file)
+
+#     def calculate_reward(game, previous_score, previous_lives):
+#         current_score = game.score
+#         current_lives = game.lives
+
+#         # Example: Reward for increasing the score
+#         score_reward = current_score - previous_score
+
+#         # Example: Penalty for losing a life
+#         life_penalty = 0 if current_lives >= previous_lives else -1
+
+#         # Combine rewards and penalties
+#         total_reward = score_reward + life_penalty
+
+#         return total_reward
+
+
+for i in range(0,10):
+    game = Game(1, 0)
+    #agent = QLearningAgent(actions=list(PLAYING_KEYS.keys()))
+    onLaunchScreen = True
+    running = True
+    while running:
+        clock.tick(40)
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 running = False
                 game.recordHighScore()
-    
-    i = random.randint(0,3)
-    if i == 0:#up
-        if not onLaunchScreen:
-            game.pacman.newDir = 0
-    elif i == 1:#right
-        if not onLaunchScreen:
-            game.pacman.newDir = 1
-    elif i == 2:#down
-        if not onLaunchScreen:
-            game.pacman.newDir = 2
-    elif i == 3:#left
-        if not onLaunchScreen:
-            game.pacman.newDir = 3
+            elif event.type == pygame.KEYDOWN:
+                game.paused = False
+                game.started = True
+                if event.key == pygame.K_SPACE:
+                    if onLaunchScreen:
+                        onLaunchScreen = False
+                        game.paused = True
+                        game.started = False
+                        game.render()
+                elif event.key == pygame.K_q:
+                    running = False
+                    game.recordHighScore()
 
-    if not onLaunchScreen:
-        game.update()
+        # Choose an action using the Q-learning agent
+        
+        # action = agent.choose_action(game)
+
+        # # Perform the action and get the reward
+        # previous_state = agent.get_state_key(game)
+        # agent.choose_action(action)
+        # reward = agent.calculate_reward(game.score,game.lives)
+
+        # # Learn from the experience
+        # agent.learn(previous_state, action, reward, agent.get_state_key(game))
+
+                    # Choose an action using the Q-learning agent
+        """
+        action = agent.choose_action(game)
+
+        # Perform the action and get the reward
+        previous_state = agent.get_state_key(game)
+        agent.choose_action(action)
+        reward = agent.calculate_reward(game.score, game.lives)
+
+        # Learn from the experience
+        agent.learn(previous_state, action, reward, agent.get_state_key(game))
+
+        # Update the game
+        """
+        if not onLaunchScreen:
+            game.update()
+
+    # Save Q-table after each episode
+    # agent.save_q_table(f'q_table_episode_{episode}.pkl')
+
+    # Reset the game for the next episode
+
+
