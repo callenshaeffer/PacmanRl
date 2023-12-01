@@ -89,7 +89,7 @@ class Game:
         self.level = level
         self.lives = 3
         self.ghosts = [Ghost(14.0, 13.5, "red", 0), Ghost(17.0, 11.5, "blue", 1), Ghost(17.0, 13.5, "pink", 2), Ghost(17.0, 15.5, "orange", 3)]
-        self.pacman = Pacman(26.0, 13.5) # Center of Second Last Row
+        self.pacman = QLearningAgent(26.0, 13.5, actions=list(PLAYING_KEYS.keys())) # Center of Second Last Row
         self.total = self.getCount()
         self.ghostScore = 200
         self.levels = [[350, 250], [150, 450], [150, 450], [0, 600]]
@@ -856,7 +856,7 @@ class Ghost:
     def isDead(self):
         return self.dead
 
-game = Game(1, 0)
+
 ghostsafeArea = [15, 13] # The location the ghosts escape to when attacked
 ghostGate = [[15, 13], [15, 14]]
 
@@ -965,8 +965,7 @@ def displayLaunchScreen():
 
     pygame.display.update()
 
-running = True
-onLaunchScreen = True
+
 displayLaunchScreen()
 clock = pygame.time.Clock()
 
@@ -975,74 +974,74 @@ def pause(time):
     while not cur == time:
         cur += 1
 
-# class QLearningAgent:
-#     def __init__(self, actions, learning_rate=0.1, discount_factor=0.9, exploration_prob=0.2):
-#         self.actions = actions
-#         self.learning_rate = learning_rate
-#         self.discount_factor = discount_factor
-#         self.exploration_prob = exploration_prob
-#         self.q_table = {}
+class QLearningAgent(Pacman):
+    def __init__(self, row, col, actions, learning_rate=0.1, discount_factor=0.9, exploration_prob=0.2) :
+        super().__init__(row, col)
+        self.actions = actions
+        self.learning_rate = learning_rate
+        self.discount_factor = discount_factor
+        self.exploration_prob = exploration_prob
+        self.q_table = {}
 
-#     def get_state_key(self, game):
+    def get_state_key(self, game):
 
-#         return str(game.acman.row) + "_" + str(game.pacman.col) + "_" + str(game.level)
+        return f"{self.row}_{self.col}_{1}"
 
-#     def choose_action(self, game):
-#         state_key = self.get_state_key(game)
+    def choose_action(self, game):
+        state_key = self.get_state_key(game)
 
-#         if random.uniform(0, 1) < self.exploration_prob:
-#             action = random.choice(self.actions)
-#         else:
-#             if state_key in self.q_table:
-#                 action = max(self.q_table[state_key], key=self.q_table[state_key].get)
-#             else:
-#                 action = random.choice(self.actions)
+        if random.uniform(0, 1) < self.exploration_prob:
+            action = random.choice(self.actions)
+        else:
+            if state_key in self.q_table:
+                action = max(self.q_table[state_key], key=self.q_table[state_key].get)
+            else:
+                action = random.choice(self.actions)
 
-#         return action
+        return action
 
-#     def learn(self, state, action, reward, next_state):
-#         state_key = state.get_state_key()
-#         next_state_key = next_state.get_state_key()
+    def learn(self, game, action, reward, next_state):
+        state_key = self.get_state_key(game)
+        next_state_key = next_state
 
-#         if state_key not in self.q_table:
-#             self.q_table[state_key] = {a: 0 for a in self.actions}
+        if state_key not in self.q_table:
+            self.q_table[state_key] = {a: 0 for a in self.actions}
 
-#         if next_state_key not in self.q_table:
-#             self.q_table[next_state_key] = {a: 0 for a in self.actions}
+        if next_state_key not in self.q_table:
+            self.q_table[next_state_key] = {a: 0 for a in self.actions}
 
-#         max_next_q = max(self.q_table[next_state_key].values()) if self.q_table[next_state_key] else 0
-#         current_q = self.q_table[state_key][action]
+        max_next_q = max(self.q_table[next_state_key].values()) if self.q_table[next_state_key] else 0
+        current_q = self.q_table[state_key][action]
 
-#         new_q = current_q + self.learning_rate * (reward + self.discount_factor * max_next_q - current_q)
-#         self.q_table[state_key][action] = new_q
+        new_q = current_q + self.learning_rate * (reward + self.discount_factor * max_next_q - current_q)
+        self.q_table[state_key][action] = new_q
 
-#     def save_q_table(self, filename):
-#         with open(filename, 'wb') as file:
-#             pickle.dump(self.q_table, file)
+    def save_q_table(self, filename):
+        with open(filename, 'wb') as file:
+            pickle.dump(self.q_table, file)
 
-#     def load_q_table(self, filename):
-#         with open(filename, 'rb') as file:
-#             self.q_table = pickle.load(file)
+    def load_q_table(self, filename):
+        with open(filename, 'rb') as file:
+            self.q_table = pickle.load(file)
 
-#     def calculate_reward(game, previous_score, previous_lives):
-#         current_score = game.score
-#         current_lives = game.lives
+    def calculate_reward(self, game, previous_score, previous_lives):
+        current_score = game.score
+        current_lives = game.lives
 
-#         # Example: Reward for increasing the score
-#         score_reward = current_score - previous_score
+        # Example: Reward for increasing the score
+        score_reward = current_score - previous_score
 
-#         # Example: Penalty for losing a life
-#         life_penalty = 0 if current_lives >= previous_lives else -1
+        # Example: Penalty for losing a life
+        life_penalty = 0 if current_lives >= previous_lives else -1
 
-#         # Combine rewards and penalties
-#         total_reward = score_reward + life_penalty
+        # Combine rewards and penalties
+        total_reward = score_reward + life_penalty
 
-#         return total_reward
+        return total_reward
 
 
 for i in range(0,10):
     game = Game(1, 0)
-    #agent = QLearningAgent(actions=list(PLAYING_KEYS.keys()))
     onLaunchScreen = True
     running = True
     while running:
@@ -1066,32 +1065,20 @@ for i in range(0,10):
                     running = False
                     game.recordHighScore()
 
-        # Choose an action using the Q-learning agent
-        
-        # action = agent.choose_action(game)
-
-        # # Perform the action and get the reward
-        # previous_state = agent.get_state_key(game)
-        # agent.choose_action(action)
-        # reward = agent.calculate_reward(game.score,game.lives)
-
-        # # Learn from the experience
-        # agent.learn(previous_state, action, reward, agent.get_state_key(game))
-
                     # Choose an action using the Q-learning agent
-        """
-        action = agent.choose_action(game)
+        
+        action = game.pacman.choose_action(game)
 
         # Perform the action and get the reward
-        previous_state = agent.get_state_key(game)
-        agent.choose_action(action)
-        reward = agent.calculate_reward(game.score, game.lives)
+        previous_state = game.pacman.get_state_key(game)
+        game.pacman.choose_action(action)
+        reward = game.pacman.calculate_reward(game, game.score, game.lives)
 
         # Learn from the experience
-        agent.learn(previous_state, action, reward, agent.get_state_key(game))
+        game.pacman.learn(previous_state, action, reward, game.pacman.get_state_key(game))
 
         # Update the game
-        """
+        
         if not onLaunchScreen:
             game.update()
 
