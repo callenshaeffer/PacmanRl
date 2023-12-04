@@ -75,7 +75,7 @@ PLAYING_KEYS = {
 }
 
 class Game:
-    def __init__(self, level, score, pacman):
+    def __init__(self, level, score):
         self.paused = True
         self.ghostUpdateDelay = 1
         self.ghostUpdateCount = 0
@@ -89,7 +89,7 @@ class Game:
         self.level = level
         self.lives = 3
         self.ghosts = [Ghost(14.0, 13.5, "red", 0), Ghost(17.0, 11.5, "blue", 1), Ghost(17.0, 13.5, "pink", 2), Ghost(17.0, 15.5, "orange", 3)]
-        self.pacman = pacman # Center of Second Last Row
+        self.pacman = QLearningAgent(26.0, 13.5, actions=list(PLAYING_KEYS.keys())) # Center of Second Last Row
         self.total = self.getCount()
         self.ghostScore = 200
         self.levels = [[350, 250], [150, 450], [150, 450], [0, 600]]
@@ -874,7 +874,7 @@ def reset():
     game.ghosts = [Ghost(14.0, 13.5, "red", 0), Ghost(17.0, 11.5, "blue", 1), Ghost(17.0, 13.5, "pink", 2), Ghost(17.0, 15.5, "orange", 3)]
     for ghost in game.ghosts:
         ghost.setTarget()
-    game.pacman = Pacman(26.0, 13.5)
+    game.pacman = QLearningAgent(26.0, 13.5, actions=list(PLAYING_KEYS.keys()))
     game.lives -= 1
     game.paused = True
     game.render()
@@ -966,8 +966,7 @@ def displayLaunchScreen():
     pygame.display.update()
 
 
-displayLaunchScreen()
-clock = pygame.time.Clock()
+
 
 def pause(time):
     cur = 0
@@ -975,7 +974,7 @@ def pause(time):
         cur += 1
 
 class QLearningAgent(Pacman):
-    def __init__(self, row, col, actions, learning_rate=0.1, discount_factor=0.9, exploration_prob=0.2) :
+    def __init__(self, row, col, actions, learning_rate=0.3, discount_factor=0.9, exploration_prob=0.2) :
         super().__init__(row, col)
         self.actions = actions
         self.learning_rate = learning_rate
@@ -986,21 +985,24 @@ class QLearningAgent(Pacman):
      
 
     def get_state_key(self, game):
-        
-        return f"{self.row}_{self.col}_{game.level}"
+        # Include information about ghosts' positions in the state representation
+        ghost_positions = [(ghost.row, ghost.col) for ghost in game.ghosts]
+        return f"{self.row}_{self.col}_{game.level}_{ghost_positions}"
 
     def choose_action(self, game):
         state_key = self.get_state_key(game)
 
-        if random.uniform(0, 1) < self.exploration_prob:
+        if state_key not in self.q_table:
+            # Choose a random action if the state is not in the Q-table
+            direction = random.choice(self.actions)
+        elif random.uniform(0, 1) < self.exploration_prob:
+            # Explore with a probability
             direction = random.choice(self.actions)
         else:
-            if state_key in self.q_table:
-                action = max(self.q_table[state_key], key=self.q_table[state_key].get)
-                direction = action
-            else:
-                direction = random.choice(self.actions)
-        
+            # Choose the action with the highest Q-value
+            action = max(self.q_table[state_key], key=self.q_table[state_key].get)
+            direction = action
+
         return direction
 
     def learn(self, game, action, reward, next_state):
@@ -1035,21 +1037,30 @@ class QLearningAgent(Pacman):
         score_reward = current_score - previous_score
 
         # Example: Penalty for losing a life
-        life_penalty = 0 if current_lives >= previous_lives else -10
+        life_penalty = 0 if current_lives >= previous_lives else -100
+
+        # Additional penalty if the agent is close to ghosts
+        ghost_penalty = 0
+        for ghost in game.ghosts:
+            value = abs(self.row - ghost.row) + abs(self.col - ghost.col) 
+            if value > 0:
+                ghost_penalty -= (50/value)
 
         # Combine rewards and penalties
-        total_reward = score_reward + life_penalty
+        total_reward = score_reward + life_penalty + ghost_penalty
 
         return total_reward
 
 
- 
-
+onLaunchScreen = True
+displayLaunchScreen()
 for i in range(0,10):
-    agent = QLearningAgent(26.0, 13.5, actions=list(PLAYING_KEYS.keys()))
-    game = Game(1, 0, agent)
-    onLaunchScreen = True
     running = True
+    clock = pygame.time.Clock()
+    
+    
+    game = Game(1, 0)
+    game.pacman.load_q_table(f'q_table_episode_{1}.pkl')
     while running:
         clock.tick(40)
         
@@ -1072,38 +1083,43 @@ for i in range(0,10):
                     game.recordHighScore()
 
                     # Choose an action using the Q-learning agent
-        if not onLaunchScreen:
-            action = agent.choose_action(game)
-            print(action)
-            if action == "up":
-                agent.newDir = 0
-            if action == "down":
-                agent.newDir = 2
-            if action == "left":
-                agent.newDir = 3
-            if action == "right":
-                agent.newDir = 1
-            
-            # Perform the action and get the reward
-            previous_state = agent.get_state_key(game)
-            
-            reward = agent.calculate_reward(game, game.score, game.lives)
+        
+        action = game.pacman.choose_action(game)
+        print(action)
+        if action == "up":
+            game.pacman.newDir = 0
+        if action == "down":
+            game.pacman.newDir = 2
+        if action == "left":
+            game.pacman.newDir = 3
+        if action == "right":
+            game.pacman.newDir = 1
+        
+        # Perform the action and get the reward
+        previous_state = game.pacman.get_state_key(game)
+        
+        reward = game.pacman.calculate_reward(game, game.score, game.lives)
 
-            # Learn from the experience
-            agent.learn(game, action, reward, agent.get_state_key(game))
+        # Learn from the experience
+        game.pacman.learn(game, action, reward, game.pacman.get_state_key(game))
 
             # Update the game
 
-            
+        if not onLaunchScreen:    
             game.update()
 
+        if game.gameOver:
+            gameBoard = copy.deepcopy(originalGameBoard)
+            break
             
             
                 
     
     # Save Q-table after each episode
-    # agent.save_q_table(f'q_table_episode_{episode}.pkl')
+    game.pacman.save_q_table(f'q_table_episode_{1}.pkl')
 
     # Reset the game for the next episode
-
+    onLaunchScreen = True
+    displayLaunchScreen()
+    
 
