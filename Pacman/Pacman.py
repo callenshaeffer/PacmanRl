@@ -75,7 +75,7 @@ PLAYING_KEYS = {
 }
 
 class Game:
-    def __init__(self, level, score):
+    def __init__(self, level, score, pacman):
         self.paused = True
         self.ghostUpdateDelay = 1
         self.ghostUpdateCount = 0
@@ -89,7 +89,7 @@ class Game:
         self.level = level
         self.lives = 3
         self.ghosts = [Ghost(14.0, 13.5, "red", 0), Ghost(17.0, 11.5, "blue", 1), Ghost(17.0, 13.5, "pink", 2), Ghost(17.0, 15.5, "orange", 3)]
-        self.pacman = QLearningAgent(26.0, 13.5, actions=list(PLAYING_KEYS.keys())) # Center of Second Last Row
+        self.pacman = pacman # Center of Second Last Row
         self.total = self.getCount()
         self.ghostScore = 200
         self.levels = [[350, 250], [150, 450], [150, 450], [0, 600]]
@@ -983,22 +983,25 @@ class QLearningAgent(Pacman):
         self.exploration_prob = exploration_prob
         self.q_table = {}
 
-    def get_state_key(self, game):
+     
 
-        return f"{self.row}_{self.col}_{1}"
+    def get_state_key(self, game):
+        
+        return f"{self.row}_{self.col}_{game.level}"
 
     def choose_action(self, game):
         state_key = self.get_state_key(game)
 
         if random.uniform(0, 1) < self.exploration_prob:
-            action = random.choice(self.actions)
+            direction = random.choice(self.actions)
         else:
             if state_key in self.q_table:
                 action = max(self.q_table[state_key], key=self.q_table[state_key].get)
+                direction = action
             else:
-                action = random.choice(self.actions)
-
-        return action
+                direction = random.choice(self.actions)
+        
+        return direction
 
     def learn(self, game, action, reward, next_state):
         state_key = self.get_state_key(game)
@@ -1032,7 +1035,7 @@ class QLearningAgent(Pacman):
         score_reward = current_score - previous_score
 
         # Example: Penalty for losing a life
-        life_penalty = 0 if current_lives >= previous_lives else -1
+        life_penalty = 0 if current_lives >= previous_lives else -10
 
         # Combine rewards and penalties
         total_reward = score_reward + life_penalty
@@ -1040,8 +1043,11 @@ class QLearningAgent(Pacman):
         return total_reward
 
 
+ 
+
 for i in range(0,10):
-    game = Game(1, 0)
+    agent = QLearningAgent(26.0, 13.5, actions=list(PLAYING_KEYS.keys()))
+    game = Game(1, 0, agent)
     onLaunchScreen = True
     running = True
     while running:
@@ -1066,22 +1072,35 @@ for i in range(0,10):
                     game.recordHighScore()
 
                     # Choose an action using the Q-learning agent
-        
-        action = game.pacman.choose_action(game)
-
-        # Perform the action and get the reward
-        previous_state = game.pacman.get_state_key(game)
-        game.pacman.choose_action(action)
-        reward = game.pacman.calculate_reward(game, game.score, game.lives)
-
-        # Learn from the experience
-        game.pacman.learn(previous_state, action, reward, game.pacman.get_state_key(game))
-
-        # Update the game
-        
         if not onLaunchScreen:
+            action = agent.choose_action(game)
+            print(action)
+            if action == "up":
+                agent.newDir = 0
+            if action == "down":
+                agent.newDir = 2
+            if action == "left":
+                agent.newDir = 3
+            if action == "right":
+                agent.newDir = 1
+            
+            # Perform the action and get the reward
+            previous_state = agent.get_state_key(game)
+            
+            reward = agent.calculate_reward(game, game.score, game.lives)
+
+            # Learn from the experience
+            agent.learn(game, action, reward, agent.get_state_key(game))
+
+            # Update the game
+
+            
             game.update()
 
+            
+            
+                
+    
     # Save Q-table after each episode
     # agent.save_q_table(f'q_table_episode_{episode}.pkl')
 
