@@ -122,7 +122,7 @@ class Game:
     # Driver method: The games primary update method
     def update(self):
         # pygame.image.unload()
-        print(self.ghostStates)
+        
         if self.gameOver:
             self.gameOverFunc()
             return
@@ -974,7 +974,7 @@ def pause(time):
         cur += 1
 
 class QLearningAgent(Pacman):
-    def __init__(self, row, col, actions, learning_rate=0.3, discount_factor=0.9, exploration_prob=0.2) :
+    def __init__(self, row, col, actions, learning_rate=0.3, discount_factor=0.9, exploration_prob=0.8) :
         super().__init__(row, col)
         self.actions = actions
         self.learning_rate = learning_rate
@@ -987,7 +987,10 @@ class QLearningAgent(Pacman):
     def get_state_key(self, game):
         # Include information about ghosts' positions in the state representation
         ghost_positions = [(ghost.row, ghost.col) for ghost in game.ghosts]
-        return f"{self.row}_{self.col}_{game.level}_{ghost_positions}"
+    
+    # Convert the ghost positions to a tuple and include in the state key
+        state_key = (self.row, self.col, game.level, tuple(ghost_positions))
+        return state_key
 
     def choose_action(self, game):
         state_key = self.get_state_key(game)
@@ -1037,14 +1040,15 @@ class QLearningAgent(Pacman):
         score_reward = current_score - previous_score
 
         # Example: Penalty for losing a life
-        life_penalty = 0 if current_lives >= previous_lives else -100
+        life_penalty = 0 if current_lives >= previous_lives else -10
 
         # Additional penalty if the agent is close to ghosts
         ghost_penalty = 0
         for ghost in game.ghosts:
             value = abs(self.row - ghost.row) + abs(self.col - ghost.col) 
+            print(value)
             if value > 0:
-                ghost_penalty -= (50/value)
+                ghost_penalty -= (500/value)
 
         # Combine rewards and penalties
         total_reward = score_reward + life_penalty + ghost_penalty
@@ -1054,16 +1058,23 @@ class QLearningAgent(Pacman):
 
 onLaunchScreen = True
 displayLaunchScreen()
-for i in range(0,10):
+for i in range(1,50):
     running = True
     clock = pygame.time.Clock()
     
     
     game = Game(1, 0)
-    game.pacman.load_q_table(f'q_table_episode_{1}.pkl')
+    game.pacman.load_q_table(f'q_table_episode_{i-1}.pkl')
+    if onLaunchScreen:
+        onLaunchScreen = False
+        game.paused = True
+        game.started = False
+        game.render()
     while running:
-        clock.tick(40)
-        
+        clock.tick(60)
+        game.paused = False
+        game.started = True
+        temp = pygame.K_SPACE
         # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -1085,7 +1096,7 @@ for i in range(0,10):
                     # Choose an action using the Q-learning agent
         
         action = game.pacman.choose_action(game)
-        print(action)
+        
         if action == "up":
             game.pacman.newDir = 0
         if action == "down":
@@ -1116,7 +1127,7 @@ for i in range(0,10):
                 
     
     # Save Q-table after each episode
-    game.pacman.save_q_table(f'q_table_episode_{1}.pkl')
+        game.pacman.save_q_table(f'q_table_episode_{i}.pkl')
 
     # Reset the game for the next episode
     onLaunchScreen = True
