@@ -14,10 +14,16 @@ To install this repository, ensure you follow the steps below:
 
 Clone the repository to your local machine:
 git clone https://github.com/callenshaeffer/PacmanRl.git
+
+
 Navigate to the directory
 cd PacmanRL
+
+
 Navigate to the pacman folder
 cd pacman
+
+
 
 To run the RL Pacman code
 run "python3 Pacman.py" in terminal
