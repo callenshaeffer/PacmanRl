@@ -1121,7 +1121,7 @@ class QLearningAgent(Pacman):
 onLaunchScreen = True
 displayLaunchScreen()
 #500 iterations of learning at a time
-for i in range(0,500):
+for i in range(0,20):
     running = True
     clock = pygame.time.Clock()
     #for the first blank data set
