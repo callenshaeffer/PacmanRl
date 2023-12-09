@@ -1,39 +1,25 @@
-# Retro Games
-A couple arcade games I made in python.
-# Pacman
-The 80s classic Pacman in all its beauty <br/> <br/>
-<!-- <img src="Pacman/Media/menu.png" alt="Pacman Menu Screen" width="400"/> -->
+Pacman Reinforcement Learning (RL) agent
+Overview
+This repository contains the source code for an AI project completed as part of the AI class at the University of Maine. The project uses Q-learning model-free learning algorithm.
+Based on a pygame implementation created by Devin Leamy - https://github.com/DevinLeamy/Pacman/tree/master/Pacman
 
-**Deployment:**
-<br/>
-1. Option One:
-    1. Download the Pacman folder
-    2. Download Python3 [https://www.python.org/downloads/]
-    3. Install pygame(2.0.0) [pip3 and homebrew are easy options]
-    4. In terminal, navigate to the file Pacman.py
-    5. In terminal type python3 Pacman.py and hit enter
-2. Option Two:
-    1. Download the Pacman folder
-    2. In terminal, navigate to the file Pacman
-    3. In terminal type ./Pacman and hit enter
-<br/>
+Prerequisites
+Before running the code, ensure you have the following installed:
 
-Note: To adjust screen size change the variable "square" on line #59 of Pacman/Pacman.py <br/>
+Python 3
+Pygame (a Python library for game development)
 
-**Gameplay (delay is just an artifact of the video quality; it runs smooth):**
-<br/>
-<img src="Pacman/Media/gameplay.gif" alt="Pacman Gameplay" width="600"/>
+Installation
+To install this repository, ensure you follow the steps below:
 
-# Snake
-I also wrote 'Snake'... <br/> <br/>
-**Deployment:**
-<br/>
-1. Option One:
-    1. Download Snake.py
-    2. Download Python3 [https://www.python.org/downloads/]
-    3. Install pygame [pip3 and homebrew are easy options]
-    4. In terminal, navigate to the file Snake.py
-    5. In terminal type python3 Snake.py and hit enter
-2. Option Two:
-    1. Download the Snake folder
-    2. Double click on Snake
+Clone the repository to your local machine:
+git clone https://github.com/callenshaeffer/PacmanRl.git
+Navigate to the directory
+cd PacmanRL
+Navigate to the pacman folder
+cd pacman
+
+To run the RL Pacman code
+run "python3 Pacman.py" in terminal
+
+    
