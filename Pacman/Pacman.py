@@ -75,7 +75,7 @@ PLAYING_KEYS = {
 }
 
 class Game:
-    def __init__(self, level, score):
+    def __init__(self, level, score, iteration):
         self.paused = True
         self.ghostUpdateDelay = 1
         self.ghostUpdateCount = 0
@@ -88,6 +88,7 @@ class Game:
         self.score = score
         self.level = level
         self.lives = 3
+        self.iteration = iteration
         self.ghosts = [Ghost(14.0, 13.5, "red", 0), Ghost(17.0, 11.5, "blue", 1), Ghost(17.0, 13.5, "pink", 2), Ghost(17.0, 15.5, "orange", 3)]
         self.pacman = QLearningAgent(26.0, 13.5, actions=list(PLAYING_KEYS.keys())) # Center of Second Last Row
         self.total = self.getCount()
@@ -973,109 +974,182 @@ def pause(time):
     while not cur == time:
         cur += 1
 
+
+
+
+
+
+
+
+
+#Our implementation of RL:
+#Jacob Michaud and Callen Shaeffer 
+#COS 470 Final Project
+
+
+
+
+
+
+
+
+
+
+# Our Q learning agent that extends pacman with the different variables used to calculate q values
 class QLearningAgent(Pacman):
-    def __init__(self, row, col, actions, learning_rate=0.3, discount_factor=0.9, exploration_prob=0.8) :
+    def __init__(self, row, col, actions, learning_rate=0.3, discount_factor=0.9) :
         super().__init__(row, col)
         self.actions = actions
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
-        self.exploration_prob = exploration_prob
+        self.exploration_prob = 4/ ((i+1) **(1/2.2))
         self.q_table = {}
 
      
-
+# defining the state space
     def get_state_key(self, game):
         # Include information about ghosts' positions in the state representation
         ghost_positions = [(ghost.row, ghost.col) for ghost in game.ghosts]
     
-    # Convert the ghost positions to a tuple and include in the state key
+    # defining the state key based on row,col,level, and ghosts' positions
         state_key = (self.row, self.col, game.level, tuple(ghost_positions))
         return state_key
 
+
+
+#choosing an action
     def choose_action(self, game):
         state_key = self.get_state_key(game)
 
-        if state_key not in self.q_table:
-            # Choose a random action if the state is not in the Q-table
+        exploration_rand = random.uniform(0, 1)
+        
+        q_values = self.q_table.get(state_key, {})
+        
+
+        if all(q == 0 for q in q_values.values()):
+            # Choose a random action if all Q-values for the state are 0
             direction = random.choice(self.actions)
-        elif random.uniform(0, 1) < self.exploration_prob:
+            # if the value produced is less than the exploration factor then it will attempt to explore in a direction it hasnt before
+        elif exploration_rand < self.exploration_prob:
             # Explore with a probability
-            direction = random.choice(self.actions)
+
+            # Filter out directions that have non-zero Q-values and are valid actions
+            # for cases where it might not be exactly 0
+            epsilon = 1e-6
+            unexplored_directions = [action for action in self.actions if q_values.get(action, 0) < epsilon and canMove(game.pacman.row, game.pacman.col)]
+
+            if unexplored_directions:
+                direction = random.choice(unexplored_directions)
+            else:
+                # If all directions have non-zero Q-values or are invalid, choose a random direction
+                direction = random.choice(self.actions)
+                
         else:
             # Choose the action with the highest Q-value
-            action = max(self.q_table[state_key], key=self.q_table[state_key].get)
+            action = max(q_values, key=q_values.get)
             direction = action
 
         return direction
 
-    def learn(self, game, action, reward, next_state):
+
+
+
+# our learning function
+
+    def learn(self, game, action, reward, next_state, previous_q_table):
         state_key = self.get_state_key(game)
         next_state_key = next_state
-
-        if state_key not in self.q_table:
+#if the statekey is not in the q table, add it
+        if state_key not in self.q_table or state_key not in previous_q_table:
             self.q_table[state_key] = {a: 0 for a in self.actions}
-
-        if next_state_key not in self.q_table:
+# if the next state is not in the q table, add it
+        if next_state_key not in self.q_table or next_state_key not in previous_q_table:
             self.q_table[next_state_key] = {a: 0 for a in self.actions}
-
-        max_next_q = max(self.q_table[next_state_key].values()) if self.q_table[next_state_key] else 0
+#get the max q value of the previous table and the current q tables values
+        max_next_q = max(previous_q_table.get(next_state_key, {}).values(), default=0)
         current_q = self.q_table[state_key][action]
 
+#create a new q value based on the RL algorithm and set the coresponding q value to it
         new_q = current_q + self.learning_rate * (reward + self.discount_factor * max_next_q - current_q)
         self.q_table[state_key][action] = new_q
 
-    def save_q_table(self, filename):
-        with open(filename, 'wb') as file:
-            pickle.dump(self.q_table, file)
 
+#for saving our q tables to files
+    def save_q_table(self, filename,merged_q_table):
+        with open(filename, 'wb') as file:
+            pickle.dump(merged_q_table, file)
+
+#for loading our q tables from files
     def load_q_table(self, filename):
         with open(filename, 'rb') as file:
-            self.q_table = pickle.load(file)
+            q_table = pickle.load(file)
+        return q_table
 
+
+
+
+#our function for calulating reward value
     def calculate_reward(self, game, previous_score, previous_lives):
         current_score = game.score
         current_lives = game.lives
 
-        # Example: Reward for increasing the score
+        # Reward for increasing the score
         score_reward = current_score - previous_score
+        
 
-        # Example: Penalty for losing a life
-        life_penalty = 0 if current_lives >= previous_lives else -10
-
-        # Additional penalty if the agent is close to ghosts
+        # Penalty if the agent is close to ghosts
         ghost_penalty = 0
         for ghost in game.ghosts:
             value = abs(self.row - ghost.row) + abs(self.col - ghost.col) 
-            print(value)
-            if value > 0:
-                ghost_penalty -= (500/value)
+            if value < 1 and value != 0:
+                ghost_penalty -= (10/value)
 
-        # Combine rewards and penalties
-        total_reward = score_reward + life_penalty + ghost_penalty
-
+        # Combine rewards and penalties and -1 for each move to encourage getting pelets
+        total_reward = score_reward + ghost_penalty  -1
+        
         return total_reward
 
 
+
+
+
+
+
+
+
+#our running game loop
 onLaunchScreen = True
 displayLaunchScreen()
-for i in range(1,50):
+#500 iterations of learning at a time
+for i in range(0,500):
     running = True
     clock = pygame.time.Clock()
-    
-    
-    game = Game(1, 0)
-    game.pacman.load_q_table(f'q_table_episode_{i-1}.pkl')
+    #for the first blank data set
+    if i == 0:
+        game = Game(1, 0, i)
+        previous_q_table = {}
+        #for the rest
+    else:
+        game = Game(1, 0, i)
+        #loading the q table from last iteration
+        previous_q_table = game.pacman.load_q_table(f'q_table_episode_{i-1}.pkl')
+        #merging the current q table with the previous one
+    merged_q_table = {**previous_q_table}
     if onLaunchScreen:
         onLaunchScreen = False
         game.paused = True
         game.started = False
         game.render()
+        #running the game
     while running:
-        clock.tick(60)
+        clock.tick(40)
         game.paused = False
         game.started = True
-        temp = pygame.K_SPACE
-        # Handle events
+        
+        
+      
+
+       # old Handle events, included so you can move the screen around
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -1089,37 +1163,54 @@ for i in range(1,50):
                         game.paused = True
                         game.started = False
                         game.render()
+                    elif game.paused == True:
+                        game.paused = False
+                    elif game.paused == False:
+                        game.paused = True
                 elif event.key == pygame.K_q:
                     running = False
                     game.recordHighScore()
 
-                    # Choose an action using the Q-learning agent
+
+
+
+
+
+
+        previous_lives = game.lives
         
+        # Choose an action using the Q-learning agent
+        previous_score = game.score    
         action = game.pacman.choose_action(game)
-        
-        if action == "up":
+        #actually set pacmans next direction 
+        if action == "up":            
             game.pacman.newDir = 0
-        if action == "down":
+        if action == "down":           
             game.pacman.newDir = 2
-        if action == "left":
+        if action == "left":            
             game.pacman.newDir = 3
         if action == "right":
             game.pacman.newDir = 1
         
+        
         # Perform the action and get the reward
         previous_state = game.pacman.get_state_key(game)
         
-        reward = game.pacman.calculate_reward(game, game.score, game.lives)
+        
 
-        # Learn from the experience
-        game.pacman.learn(game, action, reward, game.pacman.get_state_key(game))
-
-            # Update the game
+        # Update the game
 
         if not onLaunchScreen:    
             game.update()
-
+        #calculate the reward
+        reward = game.pacman.calculate_reward(game, previous_score, game.lives)
+        
+        # Learn from the experience
+        game.pacman.learn(game, action, reward, game.pacman.get_state_key(game), merged_q_table)
+        merged_q_table = {**merged_q_table, **game.pacman.q_table}
+        #reset the board on a gameover
         if game.gameOver:
+            
             gameBoard = copy.deepcopy(originalGameBoard)
             break
             
@@ -1127,7 +1218,8 @@ for i in range(1,50):
                 
     
     # Save Q-table after each episode
-        game.pacman.save_q_table(f'q_table_episode_{i}.pkl')
+    
+    game.pacman.save_q_table(f'q_table_episode_{i}.pkl',merged_q_table)
 
     # Reset the game for the next episode
     onLaunchScreen = True
