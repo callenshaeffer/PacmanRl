@@ -30,5 +30,5 @@ run "python3 Pacman.py" in terminal
 or if that doesn't work try "python Pacman.py" in terminal
 
 To exit out of the program you will need to hard shut down by inputing "ctrl-c"
-
+For your convienience we have dialed down the number of iterations to 20 in case you are unable to force a shut down
     
