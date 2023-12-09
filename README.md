@@ -27,5 +27,8 @@ cd pacman
 
 To run the RL Pacman code
 run "python3 Pacman.py" in terminal
+or if that doesn't work try "python Pacman.py" in terminal
+
+To exit out of the program you will need to hard shut down by inputing "ctrl-c"
 
     
