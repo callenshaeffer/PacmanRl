@@ -1,15 +1,15 @@
-#Pacman Reinforcement Learning (RL) agent
-##Overview
+Pacman Reinforcement Learning (RL) agent
+Overview
 This repository contains the source code for an AI project completed as part of the AI class at the University of Maine. The project uses Q-learning model-free learning algorithm.
 Based on a pygame implementation created by Devin Leamy - https://github.com/DevinLeamy/Pacman/tree/master/Pacman
 
-##Prerequisites
+Prerequisites
 Before running the code, ensure you have the following installed:
 
 Python 3
 Pygame (a Python library for game development)
 
-##Installation
+Installation
 To install this repository, ensure you follow the steps below:
 
 Clone the repository to your local machine:
@@ -25,7 +25,7 @@ cd pacman
 
 
 
-##Run the RL Pacman code
+Run the RL Pacman code
 run "python3 Pacman.py" in terminal
 or if that doesn't work try "python Pacman.py" in terminal
 
